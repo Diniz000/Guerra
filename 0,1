@@ -1,0 +1,148 @@
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = 800;
+canvas.height = 600;
+
+// Definições do tanque
+const tank = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    width: 40,
+    height: 40,
+    speed: 5,
+    color: 'green',
+};
+
+// Definições das balas
+const bullets = [];
+const bulletSpeed = 7;
+
+// Definições dos inimigos
+const enemies = [];
+const enemySpeed = 2;
+const enemySize = 30;
+
+// Pontuação
+let score = 0;
+
+// Função para desenhar o tanque
+function drawTank() {
+    ctx.fillStyle = tank.color;
+    ctx.fillRect(tank.x, tank.y, tank.width, tank.height);
+}
+
+// Função para desenhar as balas
+function drawBullets() {
+    ctx.fillStyle = 'red';
+    bullets.forEach(bullet => {
+        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+    });
+}
+
+// Função para desenhar os inimigos
+function drawEnemies() {
+    ctx.fillStyle = 'blue';
+    enemies.forEach(enemy => {
+        ctx.fillRect(enemy.x, enemy.y, enemySize, enemySize);
+    });
+}
+
+// Função para desenhar a pontuação
+function drawScore() {
+    ctx.fillStyle = 'black';
+    ctx.font = '20px Arial';
+    ctx.fillText(`Score: ${score}`, 10, 20);
+}
+
+// Função para atualizar a posição das balas
+function updateBullets() {
+    bullets.forEach(bullet => {
+        bullet.x += bullet.dx;
+        bullet.y += bullet.dy;
+    });
+    bullets = bullets.filter(bullet => bullet.x >= 0 && bullet.x <= canvas.width && bullet.y >= 0 && bullet.y <= canvas.height);
+}
+
+// Função para atualizar a posição dos inimigos
+function updateEnemies() {
+    enemies.forEach(enemy => {
+        enemy.y += enemySpeed;
+        if (enemy.y > canvas.height) {
+            // Remove inimigo se sair da tela
+            enemies.splice(enemies.indexOf(enemy), 1);
+        }
+    });
+}
+
+// Função para verificar colisões entre balas e inimigos
+function checkCollisions() {
+    bullets.forEach(bullet => {
+        enemies.forEach(enemy => {
+            if (bullet.x < enemy.x + enemySize &&
+                bullet.x + bullet.width > enemy.x &&
+                bullet.y < enemy.y + enemySize &&
+                bullet.y + bullet.height > enemy.y) {
+                // Colisão detectada
+                enemies.splice(enemies.indexOf(enemy), 1);
+                bullets.splice(bullets.indexOf(bullet), 1);
+                score += 10;
+            }
+        });
+    });
+}
+
+// Função principal de desenho
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawTank();
+    drawBullets();
+    drawEnemies();
+    drawScore();
+    updateBullets();
+    updateEnemies();
+    checkCollisions();
+    requestAnimationFrame(draw);
+}
+
+// Controle de movimentação do tanque e disparo das balas
+document.addEventListener('keydown', (event) => {
+    switch(event.key) {
+        case 'ArrowUp':
+            tank.y = Math.max(0, tank.y - tank.speed);
+            break;
+        case 'ArrowDown':
+            tank.y = Math.min(canvas.height - tank.height, tank.y + tank.speed);
+            break;
+        case 'ArrowLeft':
+            tank.x = Math.max(0, tank.x - tank.speed);
+            break;
+        case 'ArrowRight':
+            tank.x = Math.min(canvas.width - tank.width, tank.x + tank.speed);
+            break;
+        case ' ':
+            bullets.push({
+                x: tank.x + tank.width / 2 - 5, // Centraliza a bala
+                y: tank.y,
+                width: 10,
+                height: 5,
+                dx: 0,
+                dy: -bulletSpeed
+            });
+            break;
+    }
+});
+
+// Adiciona inimigos periodicamente
+function addEnemies() {
+    setInterval(() => {
+        const x = Math.random() * (canvas.width - enemySize);
+        enemies.push({
+            x: x,
+            y: -enemySize // Começa fora da tela
+        });
+    }, 1000);
+}
+
+addEnemies();
+draw();
